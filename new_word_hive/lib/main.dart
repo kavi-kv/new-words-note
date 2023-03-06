@@ -3,7 +3,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:new_word_hive/Screens/home.dart';
 import 'package:new_word_hive/theme.dart';
 
-import 'Screens/help_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

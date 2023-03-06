@@ -1,8 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:new_word_hive/MyFunction/dialogs.dart';
 import 'package:new_word_hive/Screens/help_screen.dart';
 import 'package:new_word_hive/theme.dart';
+import '../widget/drawer.dart';
 
+bool isIconDarkState = true;
+final _wordBox = Hive.box('word_box');
+List<Map<String, dynamic>> _words = [];
+
+//*: -> Word Dialog Statefull widgets
+class WordDialog extends StatefulWidget {
+  final int itemKey;
+  const WordDialog({Key? key, required this.itemKey}) : super(key: key);
+
+  @override
+  State<WordDialog> createState() => _WordDialogState();
+}
+
+class _WordDialogState extends State<WordDialog> {
+  bool isFavourite = false;
+  late String wordHolder;
+  late String descHolder;
+  late Color iconColor;
+
+  @override
+  void initState() {
+    super.initState();
+    final itemExisted =
+        _words.firstWhere((element) => element['key'] == widget.itemKey);
+    wordHolder = itemExisted['word'];
+    descHolder = itemExisted['description'];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              wordHolder,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          GestureDetector(
+            child: Icon(
+              isFavourite ? Icons.favorite : Icons.favorite_border,
+              size: 35.0,
+              color: Colors.red.shade900,
+            ),
+            onTap: () {
+              setState(() {
+                isFavourite = !isFavourite;
+              });
+            },
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const SizedBox(
+              height: 10,
+            ),
+            Text(
+              descHolder,
+              style: const TextStyle(fontSize: 16.0, wordSpacing: 5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+//*-> Main App Widget
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -11,12 +85,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, dynamic>> _words = [];
+  // List<Map<String, dynamic>> _words = [];
   final TextEditingController _wordController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   bool isSearchBarVisible = false;
   bool isSearchIconVisible = true;
-  final _wordBox = Hive.box('word_box');
+  // final _wordBox = Hive.box('word_box');
 
   //*:-> Holders
   String wordHolder = '';
@@ -24,6 +98,11 @@ class _HomePageState extends State<HomePage> {
   double _dialogHeigh = 100;
 
   bool isDartLightMode = true;
+  bool isFavourite = false;
+  bool isDelete = false;
+
+  //*:-> Messages
+  String message = "Are you sure that you want to delete this item permenently";
 
   void showSearch() {
     setState(() {
@@ -47,9 +126,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // currentTheme.addListener(() {
-    //   setState(() {});
-    // });
+    currentTheme.addListener(() {
+      setState(() {});
+    });
     _refresh();
     _refreshUi();
   }
@@ -92,27 +171,11 @@ class _HomePageState extends State<HomePage> {
     return showDialog(
         context: context,
         builder: (BuildContext context) {
-          return AlertDialog(
-            title: Center(child: Text(wordHolder)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Text(
-                    descHolder,
-                    style: const TextStyle(fontSize: 16.0, wordSpacing: 5),
-                  )
-                ],
-              ),
-            ),
-          );
+          return WordDialog(itemKey: itemKey!);
         });
   }
 
-  //?->  save word dialog
+  //*-> save word dialog
   Future<void> showFieldlDailog(BuildContext context, int? itemKey) {
     return showDialog<void>(
         context: context,
@@ -177,10 +240,12 @@ class _HomePageState extends State<HomePage> {
                       ElevatedButton(
                           onPressed: () {
                             if (itemKey == null) {
-                              addItem({
+                              if(_wordController.text.isNotEmpty && _descriptionController.text.isNotEmpty){
+                                addItem({
                                 'word': _wordController.text,
                                 'description': _descriptionController.text
                               });
+                              }
                               _clear();
                               Navigator.of(context).pop();
                             }
@@ -209,7 +274,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: const Icon(Icons.menu_rounded),
         centerTitle: true,
         title: const Text("Words"),
         actions: [
@@ -225,9 +289,12 @@ class _HomePageState extends State<HomePage> {
                     currentTheme.toggleTheme();
                     setState(() {
                       isDartLightMode = !isDartLightMode;
+                      isIconDarkState = !isIconDarkState;
                     });
                   },
-                  icon: Icon(isDartLightMode ? Icons.dark_mode_rounded : Icons.light_mode_outlined )),
+                  icon: Icon(isDartLightMode
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_outlined)),
               IconButton(
                   padding: const EdgeInsets.only(right: 10.0),
                   onPressed: () {
@@ -261,7 +328,16 @@ class _HomePageState extends State<HomePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                          onPressed: () => _deleteData(currentItem['key']),
+                          onPressed: () async {
+                            bool? confirm = await Utils.showConfirmationDialog(context, message,true);
+                            if(confirm == true)
+                            {
+                              _deleteData(currentItem['key']);
+                            }
+                            else{
+                              return;
+                            }
+                          },
                           icon: const Icon(Icons.delete)),
                       IconButton(
                           onPressed: () {},
@@ -276,6 +352,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: () => showFieldlDailog(context, null),
         child: const Icon(Icons.add),
       ),
+      drawer: const MyDrawer(),
     );
   }
 }

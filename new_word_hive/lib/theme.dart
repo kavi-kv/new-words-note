@@ -12,16 +12,17 @@ class CustomTheme with ChangeNotifier {
     notifyListeners();
   }
 
-//?:-> Light Theme
+//?xz:-> dark Theme
   static ThemeData get darkTheme {
   return ThemeData(
-    primaryColor: Colors.white,
-    scaffoldBackgroundColor: Colors.black87,
+    primaryColor: Colors.green[400],
+    useMaterial3: true,
+    scaffoldBackgroundColor: const Color(0xff181823),
     colorScheme: ColorScheme.dark(
       secondary: Colors.blue.shade400,
     ),
-    appBarTheme:  AppBarTheme(
-      color: Colors.brown[400]
+    appBarTheme: const  AppBarTheme(
+      color: Color(0xff060020)
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(color: Colors.black),
@@ -29,18 +30,20 @@ class CustomTheme with ChangeNotifier {
       displaySmall: TextStyle(color: Colors.black),
     ), 
   );
+
 }
 
-  //?:-> Dark Theme
+  //?:-> light Theme
   static ThemeData get lightTheme {
   return ThemeData(
-    primaryColor: Colors.black,
+    primaryColor: Colors.red[400],
+    useMaterial3: true,
     scaffoldBackgroundColor: Colors.white,
     colorScheme:  ColorScheme.light(
-      secondary: Colors.orange.shade300,
+      secondary: Colors.blue.shade400,
     ),
-    appBarTheme:  AppBarTheme(
-      color: Colors.blue[200]
+    appBarTheme: const  AppBarTheme(
+      color: Color(0xffF0EEED)
     ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(color: Colors.white),
